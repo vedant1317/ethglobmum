@@ -27,7 +27,8 @@
     "react-router-dom": "^7.9.5",
     "tailwind-merge": "^3.3.1",
     "viem": "^2.38.5",
-    "wagmi": "^2.19.5"
+    "wagmi": "^2.19.5",
+    "my-shared-package": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
