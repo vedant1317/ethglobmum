@@ -1,0 +1,9 @@
+{
+  "name": "@ensure/site",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Static demo site pinned by the preview publish workflow",
+  "scripts": {
+    "build": "node ./scripts/build.mjs"
+  }
+}

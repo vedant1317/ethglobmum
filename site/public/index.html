@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a0e15">
+  <meta name="description" content="An immutable release candidate for the ENSure release-integrity demo.">
+  <title>ENSure demo site — demo release</title>
+  <link rel="icon" href="./release.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <header class="wrap topbar"><a class="brand" href="./index.html" aria-label="ENSure home"><span class="mark">E</span> ENSure<span class="muted">/ releases</span></a><span class="network"><i></i> Sepolia demo</span></header>
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">CONTENT-ADDRESSED. OWNER-APPROVED.</p><h1>Ship with proof.<br><span>Not just trust.</span></h1><p class="lead">A release is more than a deployment. It is a precise set of bytes, an immutable identity, and a decision only the owner can make.</p><div class="actions"><a class="button primary" href="#release">Inspect this release <span aria-hidden="true">↗</span></a><a class="button secondary" href="./about.html">How it works <span aria-hidden="true">→</span></a></div><p class="small muted">Static site · Relative assets · No third-party scripts</p></div>
+      <div class="art"><img src="./release.svg" width="420" height="420" alt="Layered release blocks linked by an immutable fingerprint"><span class="art-label">ONE RELEASE. EXACT BYTES.</span></div>
+    </section>
+    <section class="release-card" id="release" aria-labelledby="release-title"><div class="release-heading"><div><p class="eyebrow">RELEASE CANDIDATE</p><h2 id="release-title">ENSure demo site <span class="muted">— demo release</span></h2></div><span class="candidate">Awaiting live approval</span></div><div class="metrics"><div><span class="label">Artifact</span><strong>Multi-file static site</strong><span class="small muted">HTML, CSS, JavaScript + SVG</span></div><div><span class="label">Identity</span><strong>Content-addressed</strong><span class="small muted">CID assigned when pinned</span></div><div><span class="label">Authority</span><strong>Owner signature</strong><span class="small muted">No wallet connection on this page</span></div></div><div class="note"><span class="note-symbol" aria-hidden="true">i</span><p>This page is the artifact, not the verifier. Its appearance does not prove approval. Check live ENS records and the manifest in the separate ENSure verifier.</p></div><button class="text-button" id="details-toggle" type="button" aria-expanded="false" aria-controls="details">Show the integrity model <span aria-hidden="true">+</span></button><div id="details" hidden><ol class="steps"><li><b>Build</b><span>Collect the exact files and hash every file.</span></li><li><b>Pin</b><span>Store the immutable directory and canonical manifest on IPFS.</span></li><li><b>Approve</b><span>The owner reviews the candidate before changing production.</span></li><li><b>Verify</b><span>Compare live records, approval evidence, and retrieved bytes.</span></li></ol></div></section>
+    <section class="principles"><article><span class="number">01 / ISOLATION</span><h3>Preview is not production.</h3><p>A build publisher should never have permission to change the protected production release.</p></article><article><span class="number">02 / INTEGRITY</span><h3>Every file matters.</h3><p>The manifest names each file, its byte length, MIME type, and SHA-256 fingerprint.</p></article><article><span class="number">03 / HONESTY</span><h3>Matching is not safety.</h3><p>Integrity checks show that bytes match an approval. They do not prove the code is safe.</p></article></section>
+  </main>
+  <footer class="wrap footer"><span>ENSure <span class="muted">/ demo demo artifact</span></span><span class="muted">Immutable releases. Explicit authority.</span></footer>
+</body>
+</html>

@@ -1,0 +1,242 @@
+/**
+ * src/pipeline.js
+ *
+ * The core EverDeploy pipeline:
+ *   1. Clone repo
+ *   2. Build (first pass — no assetPrefix yet)
+ *   3. Upload to IPFS → get CID
+ *   4. If Next.js: rebuild with assetPrefix = CID, re-upload → final CID
+ *   5. Log deploy on-chain (DeployRegistry + IPNSRegistry)
+ *   6. Warm public gateways
+ *
+ * All steps stream log lines via the `log` callback.
+ * Returns a deploy receipt object.
+ */
+
+const path   = require("path");
+const os     = require("os");
+const fs     = require("fs");
+const fse    = require("fs-extra");
+const simpleGit = require("simple-git");
+
+const { buildRepo, detectFramework } = require("./builder");
+const { uploadDir, warmGateways }    = require("./ipfs");
+const { logDeploy, updateIPNS, getSigner } = require("./chain");
+const { canSetContenthash, setContenthash, encodeIpfsContenthash, dnsName } = require("./ensv2");
+const { upsertAutoSubnameContenthash } = require("./ens");
+const { buildAutoAssignedEnsName, DEFAULT_PARENT } = require("./ens");
+
+const IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io";
+
+/**
+ * Parse a raw GitHub URL that may include /tree/<branch>/<subpath>.
+ * Returns { cloneUrl, branch, subDir }.
+ *
+ * Examples:
+ *   https://github.com/user/repo/tree/main/frontend  → clone repo, branch=main, subDir=frontend
+ *   https://github.com/user/repo                     → clone repo, branch=null, subDir=""
+ *   https://github.com/user/repo.git                 → clone repo, branch=null, subDir=""
+ */
+function parseRepoUrl(rawUrl) {
+  const treeMatch = rawUrl.match(
+    /^(https?:\/\/github\.com\/[^/]+\/[^/]+?)(?:\.git)?\/tree\/([^/]+)\/?(.*)$/
+  );
+  if (treeMatch) {
+    return {
+      cloneUrl: treeMatch[1] + ".git",
+      branch:   treeMatch[2],
+      subDir:   treeMatch[3] ? treeMatch[3].replace(/\/$/, "") : "",
+    };
+  }
+  // Plain repo URL (with or without .git)
+  return { cloneUrl: rawUrl, branch: null, subDir: "" };
+}
+
+function isGitHubCloneUrl(cloneUrl) {
+  return /^https?:\/\/github\.com\//i.test(cloneUrl || "");
+}
+
+function gitAuthHeaderFromToken(token) {
+  const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
+  return `AUTHORIZATION: basic ${basic}`;
+}
+
+async function runPipeline({ repoUrl, domain, env = "production", meta = "", ens = null, githubToken = null }, log = console.log) {
+  const startTime = Date.now();
+  const shouldAutoAssignDomain = !domain || domain === "auto" || domain === "AUTO";
+  const resolvedDomain = shouldAutoAssignDomain
+    ? buildAutoAssignedEnsName(DEFAULT_PARENT)
+    : domain;
+
+  log("═══════════════════════════════════════════════════");
+  log("  EverDeploy Pipeline");
+  log("═══════════════════════════════════════════════════");
+  log(`  Repo   : ${repoUrl}`);
+  log(`  Domain : ${resolvedDomain}`);
+  log(`  Env    : ${env}`);
+
+  // ── 1. Clone ──────────────────────────────────────────
+  const { cloneUrl, branch, subDir } = parseRepoUrl(repoUrl);
+
+  // Use a stable build directory under $HOME instead of /var/folders temp dir.
+  // macOS temp dirs are symlinked (/var → /private/var) which causes Next.js
+  // jest-worker / Turbopack workers to crash with path resolution errors.
+  const buildBase = path.join(os.homedir(), ".everdeploy", "builds");
+  await fse.ensureDir(buildBase);
+  const tmpDir = await fse.mkdtemp(path.join(buildBase, "build-"));
+  log(`\n📥 Cloning ${cloneUrl}${branch ? ` (branch: ${branch})` : ""}${subDir ? ` (subdir: ${subDir})` : ""}...`);
+
+  const cloneArgs = ["--depth", "1"];
+  if (branch) cloneArgs.push("--branch", branch);
+
+  if (githubToken && isGitHubCloneUrl(cloneUrl)) {
+    // Use an auth header so the token is not embedded in clone URL.
+    cloneArgs.push("--config", `http.https://github.com/.extraheader=${gitAuthHeaderFromToken(githubToken)}`);
+    log("  🔐 Using GitHub token authentication for clone");
+  }
+
+  const git = simpleGit();
+  try {
+    await git.clone(cloneUrl, tmpDir, cloneArgs);
+  } catch (err) {
+    const msg = (err && err.message) || "git clone failed";
+    if (isGitHubCloneUrl(cloneUrl) && !githubToken) {
+      throw new Error(`Git clone failed. This repository may be private; log in with GitHub or connect the repo first. Original error: ${msg}`);
+    }
+    throw err;
+  }
+  log("  ✅ Cloned");
+
+  // If the user pointed at a subdirectory, work inside it
+  const buildDir = subDir ? path.join(tmpDir, subDir) : tmpDir;
+  if (subDir) {
+    if (!(await fse.pathExists(buildDir))) {
+      throw new Error(`Subdirectory '${subDir}' not found in repository`);
+    }
+    log(`  📁 Using subdirectory: ${subDir}`);
+  }
+
+  try {
+    // ── 2. First build (no assetPrefix) ───────────────
+    log("\n🔨 Build pass 1 (get base CID)...");
+    const { outDir, framework } = await buildRepo(buildDir, "", log);
+
+    // ── 3. First IPFS upload ───────────────────────────
+    log("\n📤 IPFS upload pass 1...");
+    const baseCid = await uploadDir(outDir, `${resolvedDomain}:pass1`, log);
+    log(`  CID (pass 1): ${baseCid}`);
+
+    let finalCid = baseCid;
+
+    // ── 4. Second pass for Next.js (inject assetPrefix) ─
+    if (framework === "nextjs") {
+      log("\n🔨 Build pass 2 (inject assetPrefix)...");
+      const { outDir: outDir2 } = await buildRepo(buildDir, baseCid, log);
+
+      log("\n📤 IPFS upload pass 2...");
+      finalCid = await uploadDir(outDir2, `${resolvedDomain}:pass2`, log);
+      log(`  CID (final): ${finalCid}`);
+    }
+
+    // ── 5. ENS update ──────────────────────────────────
+    const ensConfig = ens || { mode: "custom", fullName: resolvedDomain };
+    const resolvedEnsName =
+      ensConfig.mode === "auto" && (!ensConfig.fullName || ensConfig.fullName === "auto")
+        ? buildAutoAssignedEnsName(DEFAULT_PARENT)
+        : (ensConfig.fullName || resolvedDomain);
+    let ensResult;
+
+    if (ensConfig.mode === "auto") {
+      log("\n🪪 Updating ENS (Namespace Offchain)...");
+      const ns = await upsertAutoSubnameContenthash(resolvedEnsName, finalCid, log);
+      ensResult = {
+        mode: "auto",
+        name: ns.fullName,
+        contenthash: ns.contenthash,
+        managedBy: "server",
+        status: ns.action,
+      };
+    } else {
+      // Custom name on ENSv2: point the name's resolver at this CID.
+      log(`\n🪪 ENSv2: pointing ${resolvedEnsName} at ipfs://${finalCid}...`);
+      ensResult = {
+        mode: "custom",
+        protocol: "ensv2",
+        name: resolvedEnsName,
+        contenthash: `ipfs://${finalCid}`,
+        contenthashHex: encodeIpfsContenthash(finalCid),
+        dnsName: dnsName(resolvedEnsName),
+        resolver: null,
+        managedBy: "wallet",
+        status: "pending-owner-transaction",
+      };
+      const signer = getSigner();
+      const access = await canSetContenthash(resolvedEnsName, signer.address, finalCid);
+      ensResult.resolver = access.resolver;
+      if (access.allowed) {
+        try {
+          const written = await setContenthash(resolvedEnsName, finalCid, signer, log);
+          Object.assign(ensResult, { managedBy: "server", status: "updated", txHash: written.txHash });
+        } catch (err) {
+          log(`  ⚠️  setContenthash failed: ${err.shortMessage || err.message}`);
+          ensResult.status = "pending-owner-transaction";
+        }
+      } else if (access.resolver === "0x0000000000000000000000000000000000000000") {
+        log(`  ⚠️  ${resolvedEnsName} has no ENSv2 resolver; set one before it can serve this deploy.`);
+        ensResult.status = "no-resolver";
+      } else {
+        log(`  ℹ️  Backend wallet ${signer.address} cannot set this name's contenthash.`);
+        log("     Approve setContenthash from the name owner's wallet in ENSure to publish this deploy.");
+      }
+    }
+
+    // ── 6. On-chain logging ────────────────────────────
+    log("\n⛓️  Logging to blockchain...");
+    await logDeploy(resolvedDomain, finalCid, env, meta, log);
+
+    log("\n🔗 Updating IPNS on-chain...");
+    await updateIPNS(resolvedDomain, finalCid, { ipnsKey: ensConfig.ipnsKey || null }, log);
+
+    // ── 7. Gateway warmup ──────────────────────────────
+    log("\n🔥 Warming gateways...");
+    await warmGateways(finalCid, log);
+
+    // ── Receipt ────────────────────────────────────────
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const receipt = {
+      cid: finalCid,
+      domain: resolvedDomain,
+      env,
+      framework,
+      elapsed: `${elapsed}s`,
+      timestamp: new Date().toISOString(),
+      gateways: {
+        ipfs_io:  `${IPFS_GATEWAY}/ipfs/${finalCid}/`,
+        dweb:     `https://${finalCid}.ipfs.dweb.link/`,
+        w3s:      `https://${finalCid}.ipfs.w3s.link/`,
+      },
+      ens: ensResult,
+      ipns: {
+        key: ensConfig.ipnsKey || null,
+      },
+      contracts: {
+        DeployRegistry: process.env.REGISTRY_CONTRACT,
+        IPNSRegistry:   process.env.IPNS_REGISTRY_CONTRACT,
+      },
+    };
+
+    log("\n═══════════════════════════════════════════════════");
+    log("  🚀 Pipeline complete!");
+    log(`  CID      : ${finalCid}`);
+    log(`  URL      : ${receipt.gateways.ipfs_io}`);
+    log(`  Elapsed  : ${elapsed}s`);
+    log("═══════════════════════════════════════════════════");
+
+    return receipt;
+  } finally {
+    // Always clean up temp dir
+    await fse.remove(tmpDir).catch(() => {});
+  }
+}
+
+module.exports = { runPipeline };

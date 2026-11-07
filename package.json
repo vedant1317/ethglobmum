@@ -1,0 +1,12 @@
+{
+  "name": "ethmumbai-main",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix ensure-web run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:ipfs": "ipfs daemon",
+    "build": "npm --prefix ensure-web run build",
+    "preview": "npm --prefix ensure-web run preview",
+    "postinstall": "npm --prefix ensure-web install --no-audit --no-fund && npm --prefix backend install --no-audit --no-fund"
+  }
+}
