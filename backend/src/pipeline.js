@@ -89,16 +89,25 @@ async function runPipeline({ repoUrl, domain, env = "production", meta = "", ens
   const cloneArgs = ["--depth", "1"];
   if (branch) cloneArgs.push("--branch", branch);
 
+  // The token reaches git only through environment config for this one command. `git clone --config`
+  // would persist it in .git/config inside the build directory, which then gets published to IPFS.
+  const gitEnv = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
   if (githubToken && isGitHubCloneUrl(cloneUrl)) {
-    // Use an auth header so the token is not embedded in clone URL.
-    cloneArgs.push("--config", `http.https://github.com/.extraheader=${gitAuthHeaderFromToken(githubToken)}`);
-    log("  🔐 Using GitHub token authentication for clone");
+    Object.assign(gitEnv, {
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+      GIT_CONFIG_VALUE_0: gitAuthHeaderFromToken(githubToken),
+    });
+    log("  🔐 Using GitHub token authentication for clone (not stored in the clone)");
   }
 
-  const git = simpleGit();
+  const git = simpleGit().env(gitEnv);
   try {
     await git.clone(cloneUrl, tmpDir, cloneArgs);
+    // Git metadata is never part of a site: remove it before anything is built or uploaded.
+    await fse.remove(path.join(tmpDir, ".git"));
   } catch (err) {
+    await fse.remove(tmpDir).catch(() => {});
     const msg = (err && err.message) || "git clone failed";
     if (isGitHubCloneUrl(cloneUrl) && !githubToken) {
       throw new Error(`Git clone failed. This repository may be private; log in with GitHub or connect the repo first. Original error: ${msg}`);
