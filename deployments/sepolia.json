@@ -1,0 +1,64 @@
+{
+  "chainId": 11155111,
+  "mode": "sepolia",
+  "protocol": {
+    "rootRegistry": "0xb458d6a3a77919449d03e7a6903c26827c1ec43f",
+    "ethRegistry": "0xd4ebcbbdf463c9c45784603db0ddd499bc44a8b4",
+    "universalResolver": "0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe",
+    "universalHelper": "0xd453e5bdb62cc3bea84341b1e306319c8ffd7dfe",
+    "verifiableFactory": "0xda70306c98e97ece36f997a21368e53298572991",
+    "registryImplementation": "0x9bd8a88719068d09ecee662f36c0e3856708366a",
+    "resolverImplementation": "0x115eb53f0c60696633855f90b138178fb40b2b2c"
+  },
+  "sourceCommit": "07e55a056f5b6a9c90119f501bdd05714e67dddd",
+  "label": "ensure",
+  "projectName": "ensure.eth",
+  "prodName": "prod.ensure.eth",
+  "previewName": "preview.ensure.eth",
+  "registry": "0x9A322BAc469a3d03185730e8eCF0035389206F8B",
+  "prodResolver": "0x114BcCDDF4B2D33f50C215f57455b0341fEE3Bb7",
+  "previewResolver": "0x75b4dCA2604585c81ce4E24c9879E1aBF1514Bcf",
+  "owner": "0xBa3084737A99f3ccB2F384b3AE8f325CF50EfBBe",
+  "ci": "0x596e775B878F6Ee852627822d2a36e3e9A6F30b4",
+  "projectResource": "100944130541400899532787203689692322296458643243820774245613677649346298904576",
+  "prodResource": "69142507747240367993869380354771030091424552277349758711722105801469992108032",
+  "forkBlock": 0,
+  "minRelease": "4",
+  "history": [],
+  "releaseController": null,
+  "pinataGateway": "https://blush-legislative-impala-818.mypinata.cloud",
+  "ownerPromote": {
+    "tx": "0x7c98c0a2ccbda38c4095e3c7d5c3bff8de17bfe6995c4b6f7300df9dc08da0ae",
+    "from": "0xBa3084737A99f3ccB2F384b3AE8f325CF50EfBBe",
+    "block": 12078131,
+    "gasUsed": 3831195,
+    "verify": {
+      "status": "GREEN",
+      "target": "prod.ensure.eth",
+      "release": "4",
+      "block": "12078134"
+    },
+    "atIST": "2026-11-06 23:18"
+  },
+  "arkiv": {
+    "chainId": 7794095,
+    "network": "rabdi",
+    "schema": "ensure.release-events.v1",
+    "writer": "0xA28c55Fa90e4dA2F3Ad7dd829D6A722948436fBa",
+    "explorer": "https://rabdi.explorer.arkiv.network"
+  },
+  "legacyBuildManifests": {
+    "bafybeicxywmb2dczdj55tpw7j2mh6alllmxutpblzqns5xc33refxjchh4": {
+      "release": "5",
+      "manifestCid": "bafkreihdbz27xulaxqkk7k2cbvuc2nwqtv4nd55tklyyar4faj2qauee4m",
+      "commitSha": "6d7c90225e98907462b54e5959338ab0036850ab",
+      "source": {
+        "name": "preview.ensure.eth",
+        "key": "ensure.build",
+        "block": 12078355,
+        "tx": "0x2edb8d737294d65575f7d7125d4c325c1c5916118578a830030728ba5b92397c"
+      },
+      "note": "Release 5 predates ensure.build on prod. This is the manifest CI published for the same site CID and commit; Verify still binds it to the signed CID, commit and buildHash."
+    }
+  }
+}

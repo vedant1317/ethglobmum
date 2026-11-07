@@ -1,0 +1,34 @@
+{
+  "name": "@ensure/arkiv",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./schema": "./src/schema.ts",
+    "./validate": "./src/validate.ts",
+    "./write": "./src/write.ts",
+    "./query": "./src/query.ts",
+    "./controller": "./src/controller.ts",
+    "./smoke": "./src/smoke.ts"
+  },
+  "dependencies": {
+    "@ensure/core": "workspace:*",
+    "@arkiv-network/sdk": "1.0.1",
+    "multiformats": "^13",
+    "viem": "^2"
+  },
+  "description": "ENSure release history on Arkiv (Rabdi testnet): schema, validated writes, queries, controller-event mirroring",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "smoke": "tsx --env-file-if-exists=../.env scripts/smoke-test.ts",
+    "history": "tsx --env-file-if-exists=../.env scripts/history.ts",
+    "record-controller": "tsx --env-file-if-exists=../.env scripts/record-controller-event.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

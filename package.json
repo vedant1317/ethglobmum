@@ -1,12 +1,42 @@
 {
   "name": "ethmumbai-main",
   "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
+    "test": "vitest run --exclude server/test/e2e.test.ts",
+    "e2e": "vitest run server/test/e2e.test.ts",
+    "typecheck": "tsc --noEmit",
+    "server": "tsx --env-file-if-exists=.env server/src/index.ts",
+    "setup-ens": "tsx --env-file-if-exists=.env scripts/setup-ens.ts",
+    "arkiv:smoke": "pnpm --filter @ensure/arkiv smoke",
+    "ensure": "tsx --env-file-if-exists=.env ensure-cli/src/index.ts",
+    "verify:sepolia": "tsx --env-file-if-exists=.env tools/ensure-sepolia/scripts/verify-sepolia.ts",
+    "owner:build": "tsx tools/ensure-sepolia/scripts/build-owner-promote.ts",
+    "owner:prepare": "tsx --env-file-if-exists=.env tools/ensure-sepolia/scripts/prepare-owner-promote.ts",
+    "owner:publish": "tsx --env-file-if-exists=.env tools/ensure-sepolia/scripts/publish-owner-promote.ts",
+    "preview:publish": "tsx --env-file-if-exists=.env tools/ensure-sepolia/scripts/preview-publish.ts",
+    "ci:publish-preview": "tsx --env-file-if-exists=.env scripts/ci-publish-preview.ts",
     "dev": "npm --prefix ensure-web run dev",
     "dev:backend": "npm --prefix backend run dev",
     "dev:ipfs": "ipfs daemon",
     "build": "npm --prefix ensure-web run build",
     "preview": "npm --prefix ensure-web run preview",
+    "arkiv:history": "pnpm --filter @ensure/arkiv history --",
+    "arkiv:test": "pnpm --filter @ensure/arkiv typecheck && pnpm --filter @ensure/arkiv test",
     "postinstall": "npm --prefix ensure-web install --no-audit --no-fund && npm --prefix backend install --no-audit --no-fund"
+  },
+  "dependencies": {
+    "@ensure/core": "workspace:*",
+    "viem": "^2",
+    "canonicalize": "5.1.0",
+    "multiformats": "14.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^3",
+    "esbuild": "0.28.2"
   }
 }

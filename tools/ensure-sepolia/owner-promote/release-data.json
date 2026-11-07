@@ -1,0 +1,53 @@
+{
+  "config": {
+    "owner": "0xBa3084737A99f3ccB2F384b3AE8f325CF50EfBBe",
+    "prodResolver": "0x114BcCDDF4B2D33f50C215f57455b0341fEE3Bb7",
+    "registry": "0x9A322BAc469a3d03185730e8eCF0035389206F8B",
+    "prodName": "prod.ensure.eth",
+    "projectName": "ensure.eth",
+    "projectResource": "100944130541400899532787203689692322296458643243820774245613677649346298904576",
+    "prodResource": "69142507747240367993869380354771030091424552277349758711722105801469992108032",
+    "sourceCommit": "07e55a056f5b6a9c90119f501bdd05714e67dddd",
+    "minRelease": "3"
+  },
+  "protocol": {
+    "root": "0xb458d6a3a77919449d03e7a6903c26827c1ec43f",
+    "eth": "0xd4ebcbbdf463c9c45784603db0ddd499bc44a8b4",
+    "factory": "0xda70306c98e97ece36f997a21368e53298572991",
+    "registryImpl": "0x9bd8a88719068d09ecee662f36c0e3856708366a",
+    "resolverImpl": "0x115eb53f0c60696633855f90b138178fb40b2b2c",
+    "helper": "0xd453e5bdb62cc3bea84341b1e306319c8ffd7dfe",
+    "registrar": "0xf633e7fc17e2bbe0d0965d18ec1821dcb754a3d3",
+    "usdc": "0x240b0316df57887dbbe58b586508b19e633a14aa"
+  },
+  "rpc": "https://ethereum-sepolia-rpc.publicnode.com",
+  "preparedAtBlock": "12078005",
+  "currentHash": "0xe30101551220459b82585eef2730f6157865ef06df5fe601cdd4a6da65c1e6741561b4eefcef",
+  "records": {
+    "ensure.release": "ipfs://bafkreignjyesqzb2stx26e2djo6iz5qym66mh6mymmp24xw7w2zsjjledq",
+    "ensure.manifest": "ipfs://bafkreignjyesqzb2stx26e2djo6iz5qym66mh6mymmp24xw7w2zsjjledq",
+    "ensure.approval": "",
+    "ensure.build": ""
+  },
+  "proposal": {
+    "approver": "0xBa3084737A99f3ccB2F384b3AE8f325CF50EfBBe",
+    "buildHash": "0x459b82585eef2730f6157865ef06df5fe601cdd4a6da65c1e6741561b4eefcef",
+    "chainId": "11155111",
+    "cid": "bafkreicftobfqxxpe4ypmflymxxqnx274ya43vfg3js4dztucvq3j3x454",
+    "commit": "LOCAL_FIXTURE_NO_GIT_COMMIT",
+    "issuedAt": "1793970612",
+    "name": "prod.ensure.eth",
+    "parentRegistry": "0xd4ebcbbdf463c9c45784603db0ddd499bc44a8b4",
+    "parentResource": "100944130541400899532787203689692322296458643243820774245613677649346298904576",
+    "previousManifest": "bafkreignjyesqzb2stx26e2djo6iz5qym66mh6mymmp24xw7w2zsjjledq",
+    "projectName": "ensure.eth",
+    "registry": "0x9A322BAc469a3d03185730e8eCF0035389206F8B",
+    "release": "4",
+    "resolver": "0x114BcCDDF4B2D33f50C215f57455b0341fEE3Bb7",
+    "resource": "69142507747240367993869380354771030091424552277349758711722105801469992108032",
+    "schemaVersion": 1,
+    "validUntil": "1794057012"
+  },
+  "artifactBase64": "PCFkb2N0eXBlIGh0bWw+PG1ldGEgY2hhcnNldD0idXRmLTgiPjx0aXRsZT5FTlN1cmUgZml4dHVyZSBBPC90aXRsZT48aDE+T3duZXItYXBwcm92ZWQgZml4dHVyZSBBPC9oMT48cD5Mb2NhbCB0ZXN0IGZpeHR1cmUsIG5vIHJlbW90ZSBhc3NldHMgb3IgcmVwb3NpdG9yeS1idWlsZCBjbGFpbS48L3A+Cg==",
+  "environmentRegistrationHolder": "0xC979ABb66d471D375eb61dd9dD23343FC1900074"
+}

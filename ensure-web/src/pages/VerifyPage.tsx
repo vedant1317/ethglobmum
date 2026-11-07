@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertCircle, ArrowLeftRight, ArrowRight, Check, CircleHelp, ExternalLink, FileCheck2, Fingerprint, Globe2, LoaderCircle, Search, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, ArrowLeftRight, ArrowRight, Check, CircleHelp, ExternalLink, FileCheck2, Fingerprint, Globe2, LoaderCircle, Search, ShieldCheck, X, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,9 +42,10 @@ export function VerifyPage() {
   const status = result?.status;
   const isMatch = status === "MATCH";
   const isMismatch = status === "MISMATCH";
+  const isUnprotected = status === "UNPROTECTED";
 
   const passed = checks.filter(check => check.state === "pass").length;
-  const ResultIcon = running ? LoaderCircle : isMatch ? ShieldCheck : isMismatch ? AlertCircle : CircleHelp;
+  const ResultIcon = running ? LoaderCircle : isMatch ? ShieldCheck : isMismatch ? AlertCircle : isUnprotected ? ShieldOff : CircleHelp;
   return <div className="verifier-page">
     <header className="verifier-intro">
       <div className="verifier-title"><p className="eyebrow">Public verifier / No wallet needed</p><h1 className="editorial-title">A name is a promise.<br /><em>Check the <span className="word-cycle">proof.</span></em></h1><p className="editorial-description">Look past the page. Check the live ENS pointer, the owner's approval, and the exact files behind it.</p></div>
@@ -62,14 +63,14 @@ export function VerifyPage() {
         <aside className={`inspector-summary ${isMismatch ? "inspector-mismatch" : ""}`}>
           <span className="inspector-status-icon"><ResultIcon className={running ? "animate-spin" : ""} strokeWidth={1.3} aria-hidden="true" /></span>
           <p className="eyebrow mt-6">{running ? "Inspection in progress" : "Inspection complete"}</p>
-          <h2 className="mt-3 text-3xl font-medium tracking-tight" aria-live="polite">{running ? "Following the proof…" : isMatch ? "The proof checks out." : isMismatch ? "Something differs." : "Not enough proof."}</h2>
+          <h2 className="mt-3 text-3xl font-medium tracking-tight" aria-live="polite">{running ? "Following the proof…" : isMatch ? "The proof checks out." : isMismatch ? "Something differs." : isUnprotected ? "Files match. Nobody approved them." : "Not enough proof."}</h2>
           <p className="mt-4 text-sm leading-7 text-muted-foreground">{running ? "Live checks appear as the chain reads and file fetches finish." : result?.explanation}</p>
           <div className="inspector-score"><span>{passed}<span className="text-xl text-muted-foreground">/{checks.length}</span></span><p className="eyebrow">Checks passed</p></div>
           {result && <Badge variant={isMatch ? "success" : isMismatch ? "danger" : "warning"}>{result.status}</Badge>}
           <p className="mt-7 border-t border-foreground/10 pt-5 text-xs leading-6 text-muted-foreground">A match proves consistency with the approved build. It does not determine whether the code is safe.</p>
         </aside>
         <div className="inspector-detail">
-          <Tabs defaultValue="checks"><TabsList aria-label="Verification details"><TabsTrigger value="checks">Checks</TabsTrigger><TabsTrigger value="records" disabled={!result}>Records</TabsTrigger><TabsTrigger value="environments" disabled={!result}>Environments</TabsTrigger></TabsList>
+          <Tabs defaultValue="checks"><TabsList aria-label="Verification details"><TabsTrigger value="checks">Checks</TabsTrigger><TabsTrigger value="records" disabled={!result}>Records</TabsTrigger><TabsTrigger value="environments" disabled={!result || isUnprotected || result.preview.name === "—"}>Environments</TabsTrigger></TabsList>
             <TabsContent value="checks"><div className="mb-5 flex items-center justify-between"><h3 className="text-lg font-medium tracking-tight">Follow the evidence</h3><span className="font-mono text-xs text-muted-foreground">{checks.length} checks</span></div><div className="divide-y divide-foreground/10">{checks.length ? checks.map((check, index) => <CheckRow key={check.id} check={check} index={index} />) : <p className="py-8 text-sm text-muted-foreground">Waiting for the first live read…</p>}</div></TabsContent>
             <TabsContent value="records">{result && <><p className="eyebrow mb-2">Observed on ENS</p><h3 className="mb-7 break-all font-mono text-xl">{result.name}</h3><dl className="space-y-5">
               <DataLine label="Content CID" value={result.cid ? shortCid(result.cid) : "Unavailable"} mono />
@@ -80,7 +81,7 @@ export function VerifyPage() {
               <DataLine label="Snapshot block" value={result.blockNumber?.toString() ?? "Unavailable"} mono /><DataLine label="Gateway used" value={result.gateway ? new URL(result.gateway).host : "Not fetched"} />
             </dl><div className="record-links">
               {result.siteUrl && <RecordLink href={result.siteUrl}>IPFS site</RecordLink>}{result.buildManifestUrl && <RecordLink href={result.buildManifestUrl}>Build manifest</RecordLink>}{result.approvalManifestUrl && <RecordLink href={result.approvalManifestUrl}>Owner approval</RecordLink>}
-              {result.blockNumber !== undefined && <RecordLink href={`https://sepolia.etherscan.io/block/${result.blockNumber}`}>Snapshot block</RecordLink>}<RecordLink href={`https://sepolia.etherscan.io/address/${result.production.resolver ?? deployment.prodResolver}`}>Production resolver</RecordLink>
+              {result.blockNumber !== undefined && <RecordLink href={`https://sepolia.etherscan.io/block/${result.blockNumber}`}>Snapshot block</RecordLink>}<RecordLink href={`https://sepolia.etherscan.io/address/${result.production.resolver ?? deployment.prodResolver}`}>{result.preview.name === "—" ? "Resolver" : "Production resolver"}</RecordLink>
             </div></>}</TabsContent>
             <TabsContent value="environments">{result && <div className="environment-comparison"><EnvironmentSummary title="Production" detail="Owner-approved environment" environment={result.production} /><ArrowLeftRight className="comparison-arrow" aria-hidden="true" /><EnvironmentSummary title="Preview" detail="Next release candidate" environment={result.preview} /></div>}</TabsContent>
           </Tabs>

@@ -1,5 +1,6 @@
 import { parseAbi, parseEventLogs, type Address, type Hex } from "viem";
 import { decodeContenthash } from "@/shared/core/ens";
+import { controllerV2Abi, type StoredReleaseV2 } from "@ensure/core/controller-v2";
 import type { Envelope } from "@/shared/tools/release-approval";
 import { bytesCid } from "@/shared/tools/owner-promote-shared";
 import { deployment, publicClient } from "./config";
@@ -23,12 +24,6 @@ export type ReleaseHistory = { rows: ReleaseRow[]; source: string; note?: string
 
 const eventAbi = parseAbi([
   "event TextUpdated(uint256 indexed recordId,string indexed keyHash,string key,string value)",
-  "event ReleasePromoted(bytes32 indexed releaseId,bytes32 indexed previousReleaseId,address indexed approver,string manifestCid,bytes32 manifestDigest,bytes32 commitDigest)",
-  "event ReleaseRolledBack(bytes32 indexed releaseId,bytes32 indexed fromReleaseId,address indexed caller)",
-  "event ReleaseRecovered(bytes32 indexed releaseId,bytes32 indexed fromReleaseId,address indexed caller,string reason)",
-]);
-const controllerAbi = parseAbi([
-  "function getRelease(bytes32) view returns ((bytes contenthash,string manifestCid,bytes32 manifestDigest,bytes32 commitDigest,bytes32 previousReleaseId,address approver,uint64 approvedAt))",
 ]);
 
 function envelopeFromText(value: string): Envelope | undefined {
@@ -118,27 +113,29 @@ async function controllerEvents(): Promise<ReleaseRow[]> {
   const latest = await publicClient.getBlockNumber();
   const start = historyFromBlock();
   const logs = await scanLogs(deployment.releaseController as Address, start, latest);
-  const parsed = parseEventLogs({ abi: eventAbi, logs, strict: false });
+  // ENSureReleaseController v2: promotions and owner-signed rollbacks; the release number is the action sequence.
+  const parsed = parseEventLogs({ abi: controllerV2Abi, logs, strict: false });
   const rows: ReleaseRow[] = [];
   for (const item of parsed) {
     if (!("eventName" in item) || !("args" in item) || !item.blockNumber) continue;
-    if (item.eventName !== "ReleasePromoted" && item.eventName !== "ReleaseRolledBack" && item.eventName !== "ReleaseRecovered") continue;
-    const id = String(item.args.releaseId ?? "") as Hex;
+    if (item.eventName !== "ReleasePromoted" && item.eventName !== "ReleaseRolledBack") continue;
+    const args = item.args as { releaseId?: Hex; approver?: Address; sequence?: bigint };
+    const id = String(args.releaseId ?? "") as Hex;
     if (!/^0x[0-9a-f]{64}$/i.test(id)) continue;
     const [block, release] = await Promise.all([
       publicClient.getBlock({ blockNumber: item.blockNumber }),
-      publicClient.readContract({ address: deployment.releaseController as Address, abi: controllerAbi, functionName: "getRelease", args: [id] }),
+      publicClient.readContract({ address: deployment.releaseController as Address, abi: controllerV2Abi, functionName: "getRelease", args: [id] }) as Promise<StoredReleaseV2>,
     ]);
     let cid: string | undefined;
-    try { cid = decodeContenthash(release.contenthash as Hex); } catch { /* Keep the release visible when old contenthash bytes are malformed. */ }
+    try { cid = decodeContenthash(release.contenthash); } catch { /* Keep the release visible when contenthash bytes are malformed. */ }
     rows.push({
       id: `${item.transactionHash ?? "controller"}-${item.logIndex ?? "0"}`,
-      kind: item.eventName === "ReleaseRecovered" ? "recovered" : item.eventName === "ReleaseRolledBack" ? "rollback" : "promoted",
-      release: id,
+      kind: item.eventName === "ReleaseRolledBack" ? "rollback" : "promoted",
+      release: args.sequence !== undefined ? args.sequence.toString() : id,
       cid,
-      manifestCid: release.manifestCid,
-      commit: `0x${String(release.commitDigest).slice(2, 14)}…`,
-      approver: release.approver as string,
+      buildManifestCid: pointerCid(release.buildPointer),
+      commit: `digest ${String(release.commitDigest).slice(0, 14)}…`,
+      approver: (args.approver ?? release.approver) as string,
       timestamp: Number(block.timestamp) * 1000,
       block: item.blockNumber,
       txHash: item.transactionHash,

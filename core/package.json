@@ -1,0 +1,22 @@
+{
+  "name": "@ensure/core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./src/manifest.ts",
+    "./ens": "./src/ens.ts",
+    "./setup": "./src/setup.ts",
+    "./pipeline": "./src/pipeline.ts",
+    "./api": "./src/api.ts",
+    "./approval": "./src/approval.ts",
+    "./ipfs": "./src/ipfs.ts",
+    "./verify": "./src/verify.ts",
+    "./controller-v2": "./src/controller-v2.ts"
+  },
+  "dependencies": {
+    "multiformats": "^13",
+    "@noble/hashes": "^1",
+    "viem": "^2",
+    "canonicalize": "5.1.0"
+  }
+}

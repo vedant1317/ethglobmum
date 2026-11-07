@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": { "@/*": ["src/*"], "@ensure/arkiv/*": ["../arkiv/src/*"], "@ensure/core/*": ["../core/src/*"] },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

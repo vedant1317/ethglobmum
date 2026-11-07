@@ -46,7 +46,7 @@ export function LandingVerifier() {
       {error && <p className="terminal-error" role="alert">UNAVAILABLE — {error}</p>}
       <div className="terminal-footer"><p>{deployment.releaseController ? "Controller checks depend on the configured release version." : "Current mode: v1 owner signature. v2 controller / Safe integration pending."}</p><Link to="/verify">Full verification inspector <ArrowRight size={14} /></Link></div>
     </div>
-    <div className="verification-outcomes"><p><strong>MATCH</strong> All required checks agree.</p><p><strong>MISMATCH</strong> A comparison failed.</p><p><strong>UNAVAILABLE</strong> Evidence could not be checked.</p></div>
+    <div className="verification-outcomes"><p><strong>MATCH</strong> All required checks agree.</p><p><strong>MISMATCH</strong> A comparison failed.</p><p><strong>UNAVAILABLE</strong> Evidence could not be checked.</p><p><strong>UNPROTECTED</strong> Files match, but nobody approved them.</p></div>
     <p className="landing-disclaimer">Verification checks consistency with release evidence. It does not establish that the code is safe.</p>
   </section>;
 }

@@ -1,0 +1,13 @@
+{
+  "tx": "0x7c98c0a2ccbda38c4095e3c7d5c3bff8de17bfe6995c4b6f7300df9dc08da0ae",
+  "from": "0xBa3084737A99f3ccB2F384b3AE8f325CF50EfBBe",
+  "block": 12078131,
+  "gasUsed": 3831195,
+  "verify": {
+    "status": "GREEN",
+    "target": "prod.ensure.eth",
+    "release": "4",
+    "block": "12078134"
+  },
+  "atIST": "2026-11-06 23:18"
+}

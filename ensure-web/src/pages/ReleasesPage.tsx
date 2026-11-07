@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Reveal } from "@/components/Reveal";
+import { lazy, Suspense } from "react";
+
+// The Arkiv SDK is sizeable; load the history mirror only when this page renders.
+const ArkivHistoryPanel = lazy(() => import("@/components/ArkivHistoryPanel").then((m) => ({ default: m.ArkivHistoryPanel })));
 import { deployment } from "@/lib/config";
 import { readReleaseHistory, type ReleaseRow } from "@/lib/history";
 import { formatDate, shortAddress, shortCid, etherscanTx } from "@/lib/utils";
@@ -17,7 +21,7 @@ export function ReleasesPage() {
   const rows = history.data?.rows ?? [];
   const latest = rows[0];
   const visible = rows.filter(row => filter === "all" || (filter === "restored" ? row.kind === "rollback" || row.kind === "recovered" : row.kind !== "rollback" && row.kind !== "recovered"));
-  return <div className="history-layout">
+  return <><div className="history-layout">
     <Reveal><aside className="history-intro">
       <p className="eyebrow">The release trail / Sepolia</p>
       <h1 className="editorial-title">Every release.<br /><em>A <span className="word-cycle word-cycle-late">record.</span></em></h1>
@@ -36,7 +40,8 @@ export function ReleasesPage() {
       {history.isLoading ? <div className="timeline-empty" role="status"><LoaderCircle className="size-6 animate-spin" /><p>Reading the release trail…</p></div> : history.error ? <div className="timeline-empty" role="alert"><Clock3 className="size-8" /><h2>Release events could not be read.</h2><p>{history.error instanceof Error ? history.error.message : "Sepolia read failed"}</p><Button variant="secondary" onClick={() => void history.refetch()}>Try again</Button></div> : visible.length ? <Accordion type="single" collapsible className="release-timeline">{visible.map((row, index) => <ReleaseEvent key={row.id} row={row} newest={row.id === latest?.id} index={index} />)}</Accordion> : <div className="timeline-empty"><History className="size-8" strokeWidth={1.4} /><h2>{rows.length ? "No events in this view." : "The first release starts here."}</h2><p>{rows.length ? "Choose another filter to see the rest of the trail." : history.data?.note ?? "Published releases will appear when recorded on Sepolia."}</p></div>}
       <p className="timeline-source">Source · {history.data?.source ?? "Sepolia contract events"}</p>
     </section>
-  </div>;
+  </div>
+  <Suspense fallback={<p className="mt-16 text-sm text-muted-foreground">Loading release history mirror…</p>}><ArkivHistoryPanel /></Suspense></>;
 }
 
 function ReleaseEvent({ row, newest, index }: { row: ReleaseRow; newest: boolean; index: number }) {

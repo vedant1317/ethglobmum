@@ -1,0 +1,7 @@
+packages:
+  - core
+  - arkiv
+  - server
+  - ensure-cli
+  - site
+  - web

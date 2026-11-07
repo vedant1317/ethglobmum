@@ -39,5 +39,26 @@
       "block": "12078134"
     },
     "atIST": "2026-11-06 23:18"
+  },
+  "arkiv": {
+    "chainId": 7794095,
+    "network": "rabdi",
+    "schema": "ensure.release-events.v1",
+    "writer": "0xA28c55Fa90e4dA2F3Ad7dd829D6A722948436fBa",
+    "explorer": "https://rabdi.explorer.arkiv.network"
+  },
+  "legacyBuildManifests": {
+    "bafybeicxywmb2dczdj55tpw7j2mh6alllmxutpblzqns5xc33refxjchh4": {
+      "release": "5",
+      "manifestCid": "bafkreihdbz27xulaxqkk7k2cbvuc2nwqtv4nd55tklyyar4faj2qauee4m",
+      "commitSha": "6d7c90225e98907462b54e5959338ab0036850ab",
+      "source": {
+        "name": "preview.ensure.eth",
+        "key": "ensure.build",
+        "block": 12078355,
+        "tx": "0x2edb8d737294d65575f7d7125d4c325c1c5916118578a830030728ba5b92397c"
+      },
+      "note": "Release 5 predates ensure.build on prod. This is the manifest CI published for the same site CID and commit; Verify still binds it to the signed CID, commit and buildHash."
+    }
   }
 }

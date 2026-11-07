@@ -1,0 +1,10 @@
+{
+  "name": "@ensure/cli",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ensure/core": "workspace:*",
+    "commander": "^12",
+    "viem": "^2"
+  }
+}

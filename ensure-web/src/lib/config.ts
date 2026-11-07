@@ -16,13 +16,17 @@ export type Deployment = typeof deploymentFile & {
 };
 
 export const deployment = deploymentFile as Deployment;
-export const GATEWAYS = [
+// Order matters: Filebase serves HTML and JSON with CORS. Pinata's subdomain gateway refuses HTML
+// (ERR_ID:00023) and ipfs.io / dweb.link answer these fetches with 429. Bytes are always compared,
+// so gateway choice affects availability, never integrity.
+export const GATEWAYS = [...new Set([
+  ...(import.meta.env.VITE_IPFS_GATEWAYS ?? "").split(","),
+  "https://ipfs.filebase.io",
   import.meta.env.VITE_PINATA_GATEWAY,
   deployment.pinataGateway,
-  ...(import.meta.env.VITE_IPFS_GATEWAYS ?? "").split(","),
   "https://ipfs.io",
   "https://dweb.link",
-].filter((value): value is string => Boolean(value)).map((value) => value.replace(/\/$/, ""));
+].map((value) => value?.trim()).filter((value): value is string => Boolean(value)).map((value) => value.replace(/\/$/, "")))];
 
 const configuredRpc = import.meta.env.VITE_SEPOLIA_RPC_URL?.trim();
 export const sepoliaRpc = fallback([

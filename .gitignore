@@ -22,3 +22,10 @@ typechain-types/
 .DS_Store
 *.log
 latest-deploy.json
+
+# ENSure (upstream)
+broadcast/
+.pinata.env
+server.env
+contracts/ensure/lib/
+contracts/ensure/out/

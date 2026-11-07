@@ -1,0 +1,59 @@
+# Publish the static demo in site/ to IPFS (Pinata) and point preview.ensure.eth at it.
+# Runs only on pushes to main (and manual dispatch). Fork pull requests never receive secrets.
+name: publish-preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build demo site
+        run: corepack pnpm --filter @ensure/site build
+
+      - name: Pin site and set preview
+        env:
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          CI_PRIVATE_KEY: ${{ secrets.CI_PRIVATE_KEY }}
+          # Prefer a repo/org Variable (Settings → Variables). Falls back empty so the script fails closed.
+          SEPOLIA_RPC_URL: ${{ vars.SEPOLIA_RPC_URL }}
+          IPFS_GATEWAYS: ${{ vars.IPFS_GATEWAYS }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: corepack pnpm exec tsx scripts/ci-publish-preview.ts
+
+      - name: Upload receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-receipt
+          path: receipt.json
+          if-no-files-found: ignore
